@@ -31,6 +31,8 @@ import type {
   DigestAlgorithm,
   SnpAttestation,
   SnpAttestationResult,
+  VtpmAttestation,
+  VtpmAttestationResult,
   SigningAlgorithm,
   JsonWebKey,
   JsonWebKeyECPublic,
@@ -688,6 +690,21 @@ class SnpAttestationPolyfill implements SnpAttestation {
 }
 
 (<any>globalThis).snp_attestation = new SnpAttestationPolyfill();
+
+class VtpmAttestationPolyfill implements VtpmAttestation {
+  verifyTpmAttestation(
+    _quote: ArrayBuffer,
+    _signature: ArrayBuffer,
+    _evidence: ArrayBuffer,
+    _endorsements: ArrayBuffer,
+    _uvm_endorsements?: ArrayBuffer,
+    _endorsed_tcb?: string,
+  ): VtpmAttestationResult {
+    throw new Error("Method not implemented.");
+  }
+}
+
+(<any>globalThis).vtpm_attestation = new VtpmAttestationPolyfill();
 
 function nodeBufToArrBuf(buf: Buffer): ArrayBuffer {
   // Note: buf.buffer is not safe, see docs.

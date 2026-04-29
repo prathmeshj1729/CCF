@@ -12,14 +12,16 @@ namespace ccf
   {
     oe_sgx_v1 = 0,
     insecure_virtual = 1,
-    amd_sev_snp_v1 = 2
+    amd_sev_snp_v1 = 2,
+    vtpm_v1 = 3
   };
 
   DECLARE_JSON_ENUM(
     QuoteFormat,
     {{QuoteFormat::oe_sgx_v1, "OE_SGX_v1"},
      {QuoteFormat::insecure_virtual, "Insecure_Virtual"},
-     {QuoteFormat::amd_sev_snp_v1, "AMD_SEV_SNP_v1"}});
+     {QuoteFormat::amd_sev_snp_v1, "AMD_SEV_SNP_v1"},
+     {QuoteFormat::vtpm_v1, "vTPM_v1"}});
 
   /// Describes a quote (attestation) from trusted hardware
   struct QuoteInfo
@@ -34,9 +36,14 @@ namespace ccf
     std::optional<std::vector<uint8_t>> uvm_endorsements;
     /// Endorsed TCB (hex-encoded) (SNP-only)
     std::optional<std::string> endorsed_tcb = std::nullopt;
+    /// TPM2B_ATTEST bytes from TPM2_Quote (vTPM only)
+    std::optional<std::vector<uint8_t>> tpm_quote;
+    /// TPMT_SIGNATURE bytes from TPM2_Quote (vTPM only)
+    std::optional<std::vector<uint8_t>> tpm_signature;
   };
 
   DECLARE_JSON_TYPE_WITH_OPTIONAL_FIELDS(QuoteInfo);
   DECLARE_JSON_REQUIRED_FIELDS(QuoteInfo, format, quote, endorsements);
-  DECLARE_JSON_OPTIONAL_FIELDS(QuoteInfo, uvm_endorsements, endorsed_tcb);
+  DECLARE_JSON_OPTIONAL_FIELDS(
+    QuoteInfo, uvm_endorsements, endorsed_tcb, tpm_quote, tpm_signature);
 }

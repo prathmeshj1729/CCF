@@ -832,3 +832,48 @@ export interface SnpAttestation {
     endorsed_tcb?: string,
   ): SnpAttestationResult;
 }
+
+export interface PcrSelectionEntry {
+  hash_algo: number;
+  pcr_indices: number[];
+}
+
+export interface VtpmAttestationResult {
+  snp_attestation: SnpAttestationResult["attestation"];
+  ek_pub_hash_verified: boolean;
+  ek_pub_hash_field: string;
+  pcr_digest: ArrayBuffer;
+  pcr_selection: PcrSelectionEntry[];
+  /** Hex-encoded uint64 (e.g. "0x0000000600000004") to avoid JS precision loss */
+  firmware_version: string;
+  nonce: ArrayBuffer;
+  uvm_endorsements?: {
+    did: string;
+    feed: string;
+    svn: string;
+  };
+}
+
+export const vtpm_attestation: VtpmAttestation = (<any>globalThis)
+  .vtpm_attestation;
+
+export interface VtpmAttestation {
+  /**
+   * Verify a vTPM attestation quote rooted in AMD SEV-SNP hardware.
+   *
+   * @param quote TPM2B_ATTEST bytes from TPM2_Quote
+   * @param signature TPMT_SIGNATURE bytes from TPM2_Quote
+   * @param evidence Raw SNP attestation report
+   * @param endorsements PEM bundle: ARK, ASK, VCEK, EK cert, AK cert (5 certs)
+   * @param uvm_endorsements UVM endorsements, optional
+   * @param endorsed_tcb Endorsed TCB version, optional
+   */
+  verifyTpmAttestation(
+    quote: ArrayBuffer,
+    signature: ArrayBuffer,
+    evidence: ArrayBuffer,
+    endorsements: ArrayBuffer,
+    uvm_endorsements?: ArrayBuffer,
+    endorsed_tcb?: string,
+  ): VtpmAttestationResult;
+}

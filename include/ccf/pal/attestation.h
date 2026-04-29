@@ -4,6 +4,7 @@
 
 #include "ccf/ds/quote_info.h"
 #include "ccf/pal/attestation_sev_snp_endorsements.h"
+#include "ccf/pal/attestation_vtpm.h"
 #include "ccf/pal/measurement.h"
 #include "ccf/pal/report_data.h"
 

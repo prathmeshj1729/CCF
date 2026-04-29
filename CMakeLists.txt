@@ -222,7 +222,9 @@ install(TARGETS http_parser EXPORT ccf DESTINATION lib)
 # CCF platform agnostic library
 add_ccf_static_library(
   ccf_pal
-  SRCS ${CCF_DIR}/src/pal/attestation.cpp
+  SRCS
+    ${CCF_DIR}/src/pal/attestation.cpp
+    ${CCF_DIR}/src/pal/attestation_vtpm.cpp
   LINK_LIBS ccfcrypto
 )
 
@@ -237,6 +239,7 @@ add_ccf_static_library(
     ${CCF_DIR}/src/js/extensions/console.cpp
     ${CCF_DIR}/src/js/extensions/math/random.cpp
     ${CCF_DIR}/src/js/extensions/snp_attestation.cpp
+    ${CCF_DIR}/src/js/extensions/vtpm_attestation.cpp
     ${CCF_DIR}/src/js/extensions/ccf/consensus.cpp
     ${CCF_DIR}/src/js/extensions/ccf/converters.cpp
     ${CCF_DIR}/src/js/extensions/ccf/crypto.cpp
@@ -560,6 +563,14 @@ if(BUILD_TESTS)
     target_link_libraries(snp_attestation_test PRIVATE ccf_pal ccfcrypto)
     set_property(TEST snp_attestation_test APPEND PROPERTY LABELS snp)
     set_property(TEST snp_attestation_test APPEND PROPERTY CONFIGURATIONS snp)
+
+    add_unit_test(
+      vtpm_attestation_test
+      ${CMAKE_CURRENT_SOURCE_DIR}/src/pal/test/vtpm_attestation_validation.cpp
+    )
+    target_link_libraries(vtpm_attestation_test PRIVATE ccf_pal ccfcrypto)
+    set_property(TEST vtpm_attestation_test APPEND PROPERTY LABELS vtpm)
+    set_property(TEST vtpm_attestation_test APPEND PROPERTY CONFIGURATIONS vtpm)
 
     add_unit_test(map_test ${CMAKE_CURRENT_SOURCE_DIR}/src/ds/test/map_test.cpp)
 

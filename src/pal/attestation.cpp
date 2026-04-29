@@ -5,8 +5,10 @@
 
 #include "ccf/crypto/ecdsa.h"
 #include "ccf/crypto/openssl/openssl_wrappers.h"
+#include "ccf/crypto/pem.h"
 #include "ccf/crypto/verifier.h"
 #include "ccf/pal/attestation_sev_snp.h"
+#include "ccf/pal/attestation_vtpm.h"
 #include "ccf/pal/sev_snp_cpuid.h"
 #include "ds/internal_logger.h"
 
@@ -438,10 +440,63 @@ namespace ccf::pal
     {
       verify_snp_attestation_report(quote_info, measurement, report_data);
     }
+    else if (quote_info.format == QuoteFormat::vtpm_v1)
+    {
+      if (!quote_info.tpm_quote || !quote_info.tpm_signature)
+      {
+        throw std::logic_error(
+          "vtpm_v1 attestation format requires tpm_quote and tpm_signature");
+      }
+
+      // Split the PEM bundle into individual certificates.
+      // Expected order: [0]=ARK, [1]=ASK, [2]=VCEK, [3]=EK cert, [4]=AK cert
+      const std::string endorsements_pem(
+        quote_info.endorsements.begin(), quote_info.endorsements.end());
+      const auto certs = ccf::crypto::split_x509_cert_bundle(endorsements_pem);
+
+      if (certs.size() < 5)
+      {
+        throw std::logic_error(fmt::format(
+          "vtpm_v1 endorsements PEM bundle must contain at least 5 "
+          "certificates (ARK, ASK, VCEK, EK, AK); got {}",
+          certs.size()));
+      }
+
+      // Build the SNP QuoteInfo from the first 3 certs (ARK+ASK+VCEK).
+      // quote_info.quote carries the raw SNP attestation report bytes.
+      QuoteInfo snp_quote_info = {};
+      snp_quote_info.format = QuoteFormat::amd_sev_snp_v1;
+      snp_quote_info.quote = quote_info.quote;
+
+      std::string snp_endorsements_pem;
+      for (size_t i = 0; i < 3 && i < certs.size(); ++i)
+      {
+        snp_endorsements_pem += certs[i].str();
+      }
+      snp_quote_info.endorsements = std::vector<uint8_t>(
+        snp_endorsements_pem.begin(), snp_endorsements_pem.end());
+
+      if (quote_info.uvm_endorsements.has_value())
+      {
+        snp_quote_info.uvm_endorsements = quote_info.uvm_endorsements;
+      }
+      if (quote_info.endorsed_tcb.has_value())
+      {
+        snp_quote_info.endorsed_tcb = quote_info.endorsed_tcb;
+      }
+
+      auto claims = vtpm::verify_vtpm_attestation_report(
+        *quote_info.tpm_quote,
+        *quote_info.tpm_signature,
+        snp_quote_info,
+        certs);
+
+      measurement = claims.snp_measurement;
+      report_data = claims.snp_report_data;
+    }
     else
     {
-      throw std::logic_error(
-        "CCF 7.0.0 only supports SNP and Virtual attestation formats");
+      throw std::logic_error("Unsupported attestation format");
     }
   }
 }

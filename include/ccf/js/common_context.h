@@ -10,6 +10,7 @@
 #include "ccf/js/extensions/console.h"
 #include "ccf/js/extensions/math/random.h"
 #include "ccf/js/extensions/snp_attestation.h"
+#include "ccf/js/extensions/vtpm_attestation.h"
 
 namespace ccf::js
 {
@@ -42,6 +43,10 @@ namespace ccf::js
       // add snp_attestation.*
       Base::add_extension(
         std::make_shared<ccf::js::extensions::SnpAttestationExtension>());
+
+      // add vtpm_attestation.*
+      Base::add_extension(
+        std::make_shared<ccf::js::extensions::VtpmAttestationExtension>());
 
       // add ccf.gov.*
       Base::add_extension(
