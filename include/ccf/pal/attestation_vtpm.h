@@ -14,7 +14,7 @@
 
 namespace ccf::pal::vtpm
 {
-  /// TPM2_GENERATED_VALUE — magic number that must appear in every TPM2B_ATTEST
+  /// TPM2_GENERATED_VALUE — magic number that must appear in every TPMS_ATTEST
   static constexpr uint32_t TPM_GENERATED_VALUE = 0xFF544347u;
 
   /// TPM_ST_ATTEST_QUOTE — structure tag for a PCR quote
@@ -37,7 +37,7 @@ namespace ccf::pal::vtpm
     std::vector<uint32_t> pcr_indices; ///< decoded from per-byte bitmask
   };
 
-  /// Parsed fields from a TPM2B_ATTEST / TPMS_ATTEST structure
+  /// Parsed fields from a TPMS_ATTEST structure
   struct ParsedAttest
   {
     std::vector<uint8_t> nonce; ///< extraData field
@@ -95,7 +95,7 @@ namespace ccf::pal::vtpm
   };
 
   /**
-   * Parse a raw TPM2B_ATTEST blob.
+   * Parse a raw TPMS_ATTEST blob
    * Validates the TPM_GENERATED_VALUE magic and TPM_ST_ATTEST_QUOTE type tag.
    * Throws std::logic_error on any structural error or buffer overrun.
    */
@@ -103,8 +103,8 @@ namespace ccf::pal::vtpm
 
   /**
    * Verify the TPM2 quote and signature
-   * @param raw_tpm_quote     TPM2B_ATTEST bytes from TPM2_Quote command
-   * @param raw_tpm_signature TPMT_SIGNATURE bytes from TPM2_Quote command
+   * @param raw_tpm_quote     TPMS_ATTEST bytes
+   * @param raw_tpm_signature TPMT_SIGNATURE bytes
    * @param ak_pub_pem        AK public key in PEM format (RSA only)
    * @throws std::logic_error on any parse or signature verification failure
    */
@@ -116,8 +116,8 @@ namespace ccf::pal::vtpm
   /**
    * Verify a vTPM quote rooted in AMD SEV-SNP hardware.
    *
-   * @param raw_tpm_quote     TPM2B_ATTEST bytes from TPM2_Quote command
-   * @param raw_tpm_signature TPMT_SIGNATURE bytes from TPM2_Quote command
+   * @param raw_tpm_quote     TPMS_ATTEST bytes
+   * @param raw_tpm_signature TPMT_SIGNATURE bytes
    * @param snp_quote_info  QuoteInfo with SNP report and first 3 certs
    *                          (ARK, ASK, VCEK) from the endorsements bundle
    * @param certs             All 5 certs from the endorsements PEM bundle:

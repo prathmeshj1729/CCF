@@ -36,9 +36,9 @@ namespace ccf
     std::optional<std::vector<uint8_t>> uvm_endorsements;
     /// Endorsed TCB (hex-encoded) (SNP-only)
     std::optional<std::string> endorsed_tcb = std::nullopt;
-    /// TPM2B_ATTEST bytes from TPM2_Quote (vTPM only)
+    /// TPMS_ATTEST bytes from TPM2_Quote
     std::optional<std::vector<uint8_t>> tpm_quote;
-    /// TPMT_SIGNATURE bytes from TPM2_Quote (vTPM only)
+    /// TPMT_SIGNATURE bytes from TPM2_Quote
     std::optional<std::vector<uint8_t>> tpm_signature;
   };
 

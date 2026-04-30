@@ -92,41 +92,30 @@ namespace ccf::pal::vtpm
     return size_ - pos_;
   }
 
-  // TPM2B_ATTEST wire layout (all fields big-endian):
-  //   u16 size                      (total bytes of TPMS_ATTEST that follow)
-  //   TPMS_ATTEST:
-  //     u32 magic                   (must be TPM_GENERATED_VALUE = 0xFF544347)
-  //     u16 type                    (must be TPM_ST_ATTEST_QUOTE  = 0x8018)
-  //     TPM2B qualifiedSigner       (u16 len + bytes; ignored)
-  //     TPM2B extraData             (u16 len + bytes; the nonce)
-  //     TPMS_CLOCK_INFO:            (8+4+4+1 = 17 bytes; skipped)
-  //     u64 firmwareVersion
-  //     TPML_PCR_SELECTION:
-  //       u32 count
-  //       [count x TPMS_PCR_SELECTION]:
-  //         u16 hash
-  //         u8  sizeofSelect
-  //         sizeofSelect bytes      (PCR bitmask; bit i of byte b → PCR 8*b+i)
-  //     TPM2B pcrDigest             (u16 len + bytes)
+  // TPMS_ATTEST wire layout (all fields big-endian):
+  //   u32 magic                   (must be TPM_GENERATED_VALUE = 0xFF544347)
+  //   u16 type                    (must be TPM_ST_ATTEST_QUOTE  = 0x8018)
+  //   TPM2B qualifiedSigner       (u16 len + bytes; ignored)
+  //   TPM2B extraData             (u16 len + bytes; the nonce)
+  //   TPMS_CLOCK_INFO:            (8+4+4+1 = 17 bytes; skipped)
+  //   u64 firmwareVersion
+  //   TPML_PCR_SELECTION:
+  //     u32 count
+  //     [count x TPMS_PCR_SELECTION]:
+  //       u16 hash
+  //       u8  sizeofSelect
+  //       sizeofSelect bytes      (PCR bitmask; bit i of byte b → PCR 8*b+i)
+  //   TPM2B pcrDigest             (u16 len + bytes)
 
   ParsedAttest parse_tpm2b_attest(std::span<const uint8_t> raw_quote)
   {
     BigEndianReader r(raw_quote.data(), raw_quote.size());
 
-    uint16_t attest_size = r.read_u16_be();
-    if (attest_size == 0 || static_cast<size_t>(attest_size) > r.remaining())
-    {
-      throw std::logic_error(fmt::format(
-        "TPM2B_ATTEST: size field {} is invalid (remaining bytes: {})",
-        attest_size,
-        r.remaining()));
-    }
-
     uint32_t magic = r.read_u32_be();
     if (magic != TPM_GENERATED_VALUE)
     {
       throw std::logic_error(fmt::format(
-        "TPM2B_ATTEST: magic mismatch — expected 0x{:08X}, got 0x{:08X}",
+        "TPMS_ATTEST: magic mismatch — expected 0x{:08X}, got 0x{:08X}",
         TPM_GENERATED_VALUE,
         magic));
     }
@@ -135,7 +124,7 @@ namespace ccf::pal::vtpm
     if (type != TPM_ST_ATTEST_QUOTE)
     {
       throw std::logic_error(fmt::format(
-        "TPM2B_ATTEST: type mismatch — expected TPM_ST_ATTEST_QUOTE "
+        "TPMS_ATTEST: type mismatch — expected TPM_ST_ATTEST_QUOTE "
         "(0x{:04X}), got 0x{:04X}",
         TPM_ST_ATTEST_QUOTE,
         type));
@@ -292,16 +281,10 @@ namespace ccf::pal::vtpm
     auto sig_bytes = parse_tpmt_signature(std::span<const uint8_t>(
       raw_tpm_signature.data(), raw_tpm_signature.size()));
 
-    // Per TPM2 spec Part 3 §18.4.1: sign over the TPMS_ATTEST bytes only
-    // (skip the 2-byte u16 size prefix). TPM RSASSA uses PKCS1v15 padding.
-    if (raw_tpm_quote.size() < 2)
-    {
-      throw std::logic_error("TPM quote too short to contain a size prefix");
-    }
     auto ak_rsa = ccf::crypto::make_rsa_public_key(ak_pub_pem);
     if (!ak_rsa->verify(
-          raw_tpm_quote.data() + 2,
-          raw_tpm_quote.size() - 2,
+          raw_tpm_quote.data(),
+          raw_tpm_quote.size(),
           sig_bytes.data(),
           sig_bytes.size(),
           ccf::crypto::MDType::SHA256,
@@ -309,7 +292,7 @@ namespace ccf::pal::vtpm
     {
       throw std::logic_error(
         "TPM quote signature verification failed: AK signature over "
-        "TPM2B_ATTEST does not match the provided AK public key");
+        "TPMS_ATTEST does not match the provided AK public key");
     }
 
     return parsed;
@@ -394,7 +377,7 @@ namespace ccf::pal::vtpm
         "vTPM: AK certificate is not signed by the EK certificate");
     }
 
-    // Steps 4-5: Parse TPM2B_ATTEST and TPMT_SIGNATURE
+    // Steps 4-5: Parse TPMS_ATTEST and TPMT_SIGNATURE
     auto parsed = parse_tpm2b_attest(
       std::span<const uint8_t>(raw_tpm_quote.data(), raw_tpm_quote.size()));
 
@@ -402,15 +385,11 @@ namespace ccf::pal::vtpm
       raw_tpm_signature.data(), raw_tpm_signature.size()));
 
     // Step 6: Verify TPM quote signature
-    if (raw_tpm_quote.size() < 2)
-    {
-      throw std::logic_error("TPM quote too short to contain a size prefix");
-    }
     auto ak_rsa =
       ccf::crypto::make_rsa_public_key(ak_verifier->public_key_pem());
     if (!ak_rsa->verify(
-          raw_tpm_quote.data() + 2,
-          raw_tpm_quote.size() - 2,
+          raw_tpm_quote.data(),
+          raw_tpm_quote.size(),
           sig_bytes.data(),
           sig_bytes.size(),
           ccf::crypto::MDType::SHA256,
