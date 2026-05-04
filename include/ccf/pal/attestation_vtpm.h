@@ -53,8 +53,6 @@ namespace ccf::pal::vtpm
     /// SNP report_data field (64 bytes for AMD SEV-SNP)
     PlatformAttestationReportData snp_report_data;
 
-    /// True if SHA256(EK_pub_DER) matched a field in the SNP report
-    bool ek_pub_hash_verified = false;
     /// Which SNP field matched
     std::string ek_pub_hash_field;
 
@@ -64,8 +62,6 @@ namespace ccf::pal::vtpm
     std::vector<PcrSelection> pcr_selection;
     /// UEFI firmware version from the TPM quote
     uint64_t firmware_version = 0;
-    /// Nonce (extraData) from the TPM quote
-    std::vector<uint8_t> nonce;
   };
 
   /// Cursor over a fixed byte buffer for big-endian parsing.

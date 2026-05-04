@@ -161,10 +161,7 @@ namespace ccf::js::extensions
       auto snp_obj =
         jsctx.wrap(marshal_snp_attestation_to_js(jsctx, snp_attest));
       JS_CHECK_EXC(snp_obj);
-      JS_CHECK_SET(r.set("snp_attestation", std::move(snp_obj)));
-
-      JS_CHECK_SET(
-        r.set_bool("ek_pub_hash_verified", claims.ek_pub_hash_verified));
+      JS_CHECK_SET(r.set("attestation", std::move(snp_obj)));
 
       {
         auto field = jsctx.new_string(claims.ek_pub_hash_field);
@@ -219,12 +216,6 @@ namespace ccf::js::extensions
           jsctx.new_string(fmt::format("{:#018x}", claims.firmware_version));
         JS_CHECK_EXC(fw_str);
         JS_CHECK_SET(r.set("firmware_version", std::move(fw_str)));
-      }
-
-      {
-        auto nonce = jsctx.new_array_buffer_copy(claims.nonce);
-        JS_CHECK_EXC(nonce);
-        JS_CHECK_SET(r.set("nonce", std::move(nonce)));
       }
 
       if (parsed_uvm_endorsements.has_value())

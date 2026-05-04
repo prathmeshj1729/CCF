@@ -368,6 +368,13 @@ namespace ccf::pal::vtpm
       }
     }
 
+    if (!ek_verified)
+    {
+      throw std::logic_error(
+        "vTPM: SHA256(EK_pub_DER) does not match report_data or host_data in "
+        "the SNP report — EK is not bound to this attestation");
+    }
+
     // Step 3: Verify AK certificate is signed by EK
     const ccf::crypto::Pem* ek_cert_ptr = &ek_cert;
     auto ak_verifier = ccf::crypto::make_verifier(ak_cert);
@@ -404,12 +411,10 @@ namespace ccf::pal::vtpm
     return VtpmAttestationClaims{
       .snp_measurement = snp_measurement,
       .snp_report_data = snp_report_data,
-      .ek_pub_hash_verified = ek_verified,
       .ek_pub_hash_field = ek_field,
       .pcr_digest = parsed.pcr_digest,
       .pcr_selection = parsed.pcr_selection,
       .firmware_version = parsed.firmware_version,
-      .nonce = parsed.nonce,
     };
   }
 
